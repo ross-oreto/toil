@@ -2,6 +2,8 @@ package io.oreto.toil.dsl.filter;
 
 
 import io.oreto.toil.dsl.Expressible;
+import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.provider.DbProvider;
 
 public enum Operator implements Expressible<Operator> {
     EQ("=")
@@ -43,7 +45,7 @@ public enum Operator implements Expressible<Operator> {
     }
 
     @Override
-    public String express() {
-        return s;
+    public SQL express(DbProvider dbProvider) {
+        return SQL.of(s);
     }
 }

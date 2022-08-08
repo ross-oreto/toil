@@ -1,13 +1,15 @@
 package io.oreto.toil.dsl.query;
 
 import io.oreto.toil.dsl.Expressible;
+import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.provider.DbProvider;
 
 public class Alias<T> implements Expressible<T> {
     public static <T> Alias<T> create(Expressible<T> expressible, String alias) {
         return new Alias<>(expressible, alias);
     }
 
-    public final Expressible<T> expressible;
+    private final Expressible<T> expressible;
     private final String aliasName;
 
     protected Alias(Expressible<T> expressible, String alias) {
@@ -15,8 +17,9 @@ public class Alias<T> implements Expressible<T> {
         this.aliasName = alias;
     }
 
-    public String create() {
-        return String.format("%s AS %s", expressible.express(), getAliasName());
+    public SQL create(DbProvider dbProvider) {
+        SQL sql = expressible.express(dbProvider);
+        return SQL.of(String.format("%s AS %s", sql, getAliasName()), sql.getParameters());
     }
 
     public String getAliasName() {
@@ -24,8 +27,8 @@ public class Alias<T> implements Expressible<T> {
     }
 
     @Override
-    public String express() {
-        return aliasName;
+    public SQL express(DbProvider dbProvider) {
+        return SQL.of(aliasName);
     }
 
     @Override

@@ -1,6 +1,9 @@
 package io.oreto.toil.dsl;
 
 
+import java.util.Collection;
+import java.util.List;
+
 public class SQL {
     public static SQL of(String sql, Object... parameters) {
         return new SQL(sql, parameters);
@@ -8,17 +11,26 @@ public class SQL {
 
     protected SQL(String sql, Object... parameters) {
         this.sql = sql;
-        this.parameters = parameters;
+        this.parameters = List.of(parameters);
     }
 
     private final String sql;
-    private final Object[] parameters;
+    private final Collection<Object> parameters;
 
     public String getSql() {
         return sql;
     }
 
-    public Object[] getParameters() {
+    public Collection<Object> getParameters() {
         return parameters;
+    }
+
+    public boolean hasParameters() {
+        return !parameters.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return sql;
     }
 }

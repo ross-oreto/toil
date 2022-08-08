@@ -5,36 +5,37 @@ import io.oreto.toil.Toil;
 import io.oreto.toil.dsl.Expressible;
 import io.oreto.toil.dsl.Table;
 import io.oreto.toil.dsl.query.Mappable;
-import io.oreto.toil.dsl.query.Select;
+import io.oreto.toil.dsl.query.Row;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.*;
 
-import io.oreto.toil.dsl.query.Record;
-
 public class Result<T> {
    protected final List<T> records;
    protected final List<SQLException> exceptions;
 
    @SuppressWarnings("unchecked")
-   Result(Select select, ResultSet resultSet, Mappable<T> mappable) {
+   Result(ResultSet resultSet) {
       this.exceptions = new ArrayList<>();
       this.records = new ArrayList<>();
-      if (this.getClass().equals(RecordResult.class)) {
-         try {
-            this.records.addAll ((List<T>) Record.of(resultSet));
-         } catch (SQLException sqlException) {
-            exceptions.add(sqlException);
-         }
-      } else {
-        mapRecord(select, resultSet, mappable);
+      try {
+         this.records.addAll ((List<T>) Row.of(resultSet));
+      } catch (SQLException sqlException) {
+         exceptions.add(sqlException);
       }
    }
 
-   private void mapRecord(Select select, ResultSet resultSet, Mappable<T> mappable) {
-      final Map<Integer, Class<?>> iClassMap = buildClassIndex(select, mappable.getTableClassMap());
+   Result(ResultSet resultSet, List<? extends Expressible<?>> returning, Table defaultTable, Mappable<T> mappable) {
+      this.exceptions = new ArrayList<>();
+      this.records = new ArrayList<>();
+      mapRecord(resultSet, returning, defaultTable, mappable);
+   }
+
+   private void mapRecord(ResultSet resultSet, List<? extends Expressible<?>> returning, Table defaultTable, Mappable<T> mappable) {
+      final Map<Integer, Class<?>> iClassMap =
+              buildClassIndex(returning, defaultTable, mappable.getTableClassMap());
       final Map<Class<?>, Map<Object, Object>> store = new WeakHashMap<>();
 
       final Map<Class<?>, Map<String, Object>> classValues = new WeakHashMap<>();
@@ -44,7 +45,7 @@ public class Result<T> {
 
       try {
          while (resultSet.next()) {
-            // reset row state for each record
+            // reset row state for each row
             classValues.clear(); classObjects.clear(); newObjects.clear();
 
             buildClassValues(resultSet, iClassMap, classValues);
@@ -62,14 +63,15 @@ public class Result<T> {
       }
    }
 
-   private Map<Integer, Class<?>> buildClassIndex(Select select, Map<Table, Class<?>> tableClassMap) {
+   private Map<Integer, Class<?>> buildClassIndex(List<? extends Expressible<?>> returning
+           , Table defaultTable
+           , Map<Table, Class<?>> tableClassMap) {
       Map<Integer, Class<?>> iClassMap = new WeakHashMap<>();
-      List<Expressible<?>> expressibles = select.getExpressibles();
-      int size = expressibles.size();
+      int size = returning.size();
       for (int i = 0; i < size; i++) {
-         Table table = expressibles.get(i).getTable();
+         Table table = returning.get(i).getTable();
          if (table == null)
-            table = select.getFrom().get(0);
+            table = defaultTable;
          iClassMap.put(i, tableClassMap.get(table));
       }
       return iClassMap;
@@ -85,7 +87,9 @@ public class Result<T> {
          Class<?> aClass = iClassMap.get(i - 1);
          Map<String, Object> vals = classValues.get(aClass);
          if (vals == null) {
-            classValues.put(aClass, new WeakHashMap<String, Object>(){{ put(name, val); }});
+            classValues.put(aClass, new WeakHashMap<>() {{
+               put(name, val);
+            }});
          } else
             vals.put(name, val);
       }
@@ -152,5 +156,9 @@ public class Result<T> {
 
    public boolean isEmpty() {
       return records.isEmpty();
+   }
+
+   public boolean isNotEmpty() {
+      return !records.isEmpty();
    }
 }

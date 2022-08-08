@@ -1,11 +1,17 @@
 package io.oreto.toil.provider;
 
-import io.oreto.toil.dsl.*;
+import io.oreto.toil.dsl.Expressible;
+import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.dsl.Table;
 import io.oreto.toil.dsl.column.ColumnInfo;
 import io.oreto.toil.dsl.filter.Where;
+import io.oreto.toil.dsl.function.Func;
+import io.oreto.toil.dsl.insert.Insert;
 import io.oreto.toil.dsl.query.Mappable;
 import io.oreto.toil.dsl.query.Orderable;
+import io.oreto.toil.dsl.query.Row;
 import io.oreto.toil.dsl.query.Select;
+import io.oreto.toil.dsl.sequence.Sequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,68 +133,152 @@ public abstract class DbProvider implements AutoCloseable {
         SQL sql = toSQL(select);
         log.debug(sql.getSql());
         try (PreparedStatement statement = connection().prepareStatement(sql.getSql())) {
-            Object[] parameters = sql.getParameters();
-            for (int i = 0; i < parameters.length; i++) {
-                statement.setObject(i + 1, parameters[i]);
+            prepareParameters(statement, sql.getParameters());
+            try(ResultSet resultSet = statement.executeQuery()) {
+                return resultFunction.apply(resultSet);
             }
-            logParameters(parameters);
-            return resultFunction.apply(statement.executeQuery());
         }
     }
 
-    public Result<Record> fetch(Select select) throws SQLException {
-        return query(select, resultSet -> new RecordResult(select, resultSet));
+    public Result<Row> fetch(Select select) throws SQLException {
+        return query(select, RowResult::new);
     }
 
     public <T> Result<T> fetch(Select select, Mappable<T> mappable) throws SQLException {
-        return query(select, resultSet -> new Result<>(select, resultSet, mappable));
+        return query(select, resultSet -> new Result<>(resultSet, select.getExpressibles(), select.getFrom().get(0), mappable));
     }
 
-    protected void logParameters(Object[] parameters) {
-        if (parameters.length > 0)
-            log.debug("parameters: [{}]", Arrays.stream(parameters).map(Object::toString)
+    protected void prepareParameters(PreparedStatement statement, Collection<Object> parameters) throws SQLException {
+        logParameters(parameters);
+        int i = 1;
+        for (Object parameter : parameters) {
+            statement.setObject(i, parameter);
+            i++;
+        }
+    }
+
+    public int execute(Insert insert) throws SQLException {
+        SQL sql = toSQL(insert);
+        log.debug(sql.getSql());
+        try (PreparedStatement statement = connection().prepareStatement(sql.getSql())) {
+            prepareParameters(statement, sql.getParameters());
+            return statement.executeUpdate();
+        }
+    }
+
+    public RowResult fetch(Insert insert) throws SQLException {
+        SQL sql = toSQL(insert);
+        log.debug(sql.getSql());
+        try (PreparedStatement statement = connection().prepareStatement(sql.getSql()
+                , insert.getReturning().stream().map(ColumnInfo::getName).toArray(String[]::new))) {
+            prepareParameters(statement, sql.getParameters());
+            statement.executeUpdate();
+            return new RowResult(statement.getGeneratedKeys());
+        }
+    }
+
+    public <T> Result<T> fetch(Insert insert, Mappable<T> mappable) throws SQLException {
+        SQL sql = toSQL(insert);
+        log.debug(sql.getSql());
+        try (PreparedStatement statement = connection().prepareStatement(sql.getSql()
+                , insert.getReturning().stream().map(ColumnInfo::getName).toArray(String[]::new))) {
+            prepareParameters(statement, sql.getParameters());
+            statement.executeUpdate();
+            return new Result<>(statement.getGeneratedKeys(), insert.getReturning(), insert.getTable(), mappable);
+        }
+    }
+
+    protected void logParameters(Collection<Object> parameters) {
+        if (!parameters.isEmpty())
+            log.debug("parameters: [{}]", parameters.stream().map(Object::toString)
                     .collect(Collectors.joining(", ")));
+    }
+
+    public SQL toSQL(Insert insert) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("insert into ").append(insert.getTable().qualify()).append(' ');
+
+        if (!insert.getColumns().isEmpty()) {
+            sb.append('(')
+                    .append(insert.getColumns().stream().map(ColumnInfo::getName).collect(Collectors.joining(", ")))
+                    .append(") ");
+        }
+        if (insert.getSelectValues() == null) {
+            List<Object> parameters = new ArrayList<>();
+            sb.append("values (")
+                    .append(insert.getValues().stream().map(value -> {
+                       SQL sql = value.express(this);
+                       if (sql.hasParameters())
+                           parameters.addAll(sql.getParameters());
+                       return sql.getSql();
+                    }).collect(Collectors.joining(", ")))
+                    .append(')');
+            return SQL.of(sb.toString(), parameters.toArray());
+        } else {
+            SQL sql = toSQL(insert.getSelectValues());
+            sb.append(' ').append(sql.getSql());
+            return SQL.of(sb.toString(), sql.getParameters());
+        }
     }
 
     public SQL toSQL(Select select) {
         StringBuilder sb = new StringBuilder();
         // SELECT
-        String selections = select.getExpressibles().isEmpty()
-                ? "*" : select.getExpressibles().stream()
-                .map(expressible -> expressible.isAliased()
-                        ? expressible.getAlias().create()
-                        : expressible.express())
-                .collect(Collectors.joining(", "));
+        List<String> selectionList = new ArrayList<>();
+        List<Object> paramsList = new ArrayList<>();
+        if (select.getExpressibles().isEmpty())
+            selectionList.add("*");
+        else {
+           for (Expressible<?> expressible : select.getExpressibles()) {
+               SQL sql = expressible.isAliased()
+                       ? expressible.getAlias().create(this)
+                       : expressible.express(this);
+               selectionList.add(sql.getSql());
+               if (sql.hasParameters())
+                   paramsList.addAll(sql.getParameters());
+           }
+        }
         String tables = select.getFrom().stream()
-                .map(Table::getTableName)
+                .map(Table::qualify)
                 .collect(Collectors.joining(", "));
-        sb.append("select ").append(selections).append(" from ").append(tables);
-        Object[] params;
+        sb.append("select ").append(String.join(", ", selectionList));
+        if (tables.length() > 0)
+            sb.append(" from ").append(tables);
+
         // WHERE
         if (select.isFiltered()) {
-            params = whereClause(sb, select.getWhere());
-        } else
-            params = new Object[]{};
+            paramsList.addAll(whereClause(sb, select.getWhere()));
+        }
+
         // ORDER BY
         if (!select.getOrderables().isEmpty()) {
             sb.append(" order by ").append(select.getOrderables().stream().map(orderable -> {
                 Orderable.Direction direction = orderable.getDirection();
-                if (direction == null)
-                    return orderable.express();
-                else
-                    return String.format("%s %s", orderable.express(), orderable.getDirection());
+                SQL sql = orderable.express(this);
+                if (sql.hasParameters())
+                    paramsList.addAll(sql.getParameters());
+                if (direction == null) {
+                    return sql.getSql();
+                }
+                else {
+                    return String.format("%s %s", sql.getSql(), orderable.getDirection());
+                }
             }).collect(Collectors.joining(", ")));
         }
+
         // OFFSET FETCH
         if (select.isPaged()) {
-            sb.append(" ").append(page(select));
+            SQL sql = page(select);
+            if (sql.hasParameters())
+                paramsList.addAll(sql.getParameters());
+            sb.append(" ").append(sql.getSql());
         }
-        return SQL.of(sb.toString(), params);
+        return SQL.of(sb.toString(), paramsList.toArray());
     }
 
-    protected Object[] whereClause(StringBuilder sb, Where where) {
+    protected Collection<Object> whereClause(StringBuilder sb, Where where) {
         if (where.getLogic().isEmpty())
-            return new Object[] {};
+            return new ArrayList<>();
 
         List<Object> params = new ArrayList<>();
         boolean hasGroups = where.getLogic().size() > 1;
@@ -202,27 +292,92 @@ public abstract class DbProvider implements AutoCloseable {
             sb.append(
                     Arrays.stream(logic.conditions())
                             .map(condition -> {
-                               params.addAll(condition.getParams());
-                               return condition.toString();
+                                SQL sql = condition.toSQL(this);
+                                if (sql.hasParameters())
+                                    params.addAll(sql.getParameters());
+                                return sql.getSql();
                             })
                             .collect(Collectors.joining(String.format(" %s ", logic.operator())))
             );
             if (group) sb.append(')');
         }
-        return params.toArray();
+        return params;
     }
 
-    public String page(Select select) {
+    public SQL page(Select select) {
         Integer offset = select.getOffset();
         Integer limit = select.getLimit();
         if (Objects.nonNull(offset) && Objects.nonNull(limit)) {
-            return String.format("offset %d rows fetch next %d rows only", offset, limit);
+            return SQL.of("offset ? rows fetch next ? rows only", offset, limit);
         } else if (Objects.nonNull(offset)) {
-            return String.format("offset %d rows", offset);
+            return SQL.of("offset ? rows", offset);
         } else if (Objects.nonNull(limit)) {
-            return String.format("fetch next %d rows only", limit);
+            return SQL.of("fetch next ? rows only", limit);
         } else {
-            return "";
+            return SQL.of("");
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T extends Number> T seqval(Sequence<T> sequence, boolean current) throws SQLException {
+        try(Statement statement = connection().createStatement()) {
+           SQL sql = toSQL(sequence, current);
+           log.debug(sql.getSql());
+           try(ResultSet resultSet = statement.executeQuery(sql.getSql())) {
+               resultSet.next();
+               return resultSet.getObject(1) == null
+                       ? (T) sequence.getType().getMethod("valueOf", String.class).invoke(null, "0")
+                       : resultSet.getObject(1, sequence.getType());
+           }
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    public <T extends Number> SQL toSQL(Sequence<T> sequence, boolean current) {
+        if (current) {
+            return SQL.of(String.format("SELECT current_value FROM sys.sequences where name = '%s'", sequence.qualify()));
+        } else {
+            return SQL.of(String.format("call NEXT VALUE FOR %s", sequence.qualify()));
+        }
+    }
+
+    public <T extends Number> T nextval(Sequence<T> sequence) throws SQLException {
+        return seqval(sequence, false);
+    }
+
+    public <T extends Number> T currval(Sequence<T> sequence) throws SQLException {
+        return seqval(sequence, true);
+    }
+
+    // *********************** FUNCTIONS
+   protected SQL toSQL(Func<?> func, Expressible<?>... parameters) {
+        List<Object> params = new ArrayList<>();
+        return SQL.of(String.format(
+                "%s(%s)"
+                , func.getName()
+                , Arrays.stream(parameters)
+                        .map(parameter -> {
+                           SQL sql = parameter.express(this);
+                           if (sql.hasParameters())
+                               params.addAll(sql.getParameters());
+                           return sql.getSql();
+                        })
+                        .collect(Collectors.joining(", "))
+        ), params.toArray());
+   }
+
+    public SQL nextVal(Sequence<?> sequence) {
+        return SQL.of(String.format("%s(%s)", Func.Names.NEXTVAL.name(), sequence.qualify()));
+    }
+
+    public SQL lower(Expressible<CharSequence> string) {
+        SQL sql = string.express(this);
+        return SQL.of(String.format("%s(%s)", Func.Names.LOWER.name(), sql.getSql()), sql.getParameters());
+    }
+
+    public SQL upper(Expressible<CharSequence> string) {
+        SQL sql = string.express(this);
+        return SQL.of(String.format("%s(%s)", Func.Names.UPPER.name(), sql.getSql()), sql.getParameters());
     }
 }

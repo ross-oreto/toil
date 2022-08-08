@@ -1,5 +1,7 @@
 package io.oreto.toil.dsl;
 
+import io.oreto.toil.provider.DbProvider;
+
 public class Constant<T> implements Expressible<T> {
     public static <T> Constant<T> of(T value) {
         return new Constant<>(value);
@@ -16,10 +18,10 @@ public class Constant<T> implements Expressible<T> {
     }
 
     @Override
-    public String express() {
-        return CharSequence.class.isAssignableFrom(value.getClass())
+    public SQL express(DbProvider dbProvider) {
+        return SQL.of(CharSequence.class.isAssignableFrom(value.getClass())
                 ? String.format("'%s'", value)
-                : value.toString();
+                : value.toString());
     }
 
     @Override
@@ -30,5 +32,10 @@ public class Constant<T> implements Expressible<T> {
     Constant<T> associate(Table table) {
        this.table = table;
        return this;
+    }
+
+    @Override
+    public String toString() {
+        return value.toString();
     }
 }

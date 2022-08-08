@@ -2,8 +2,10 @@ package io.oreto.toil.dsl.column;
 
 
 import io.oreto.toil.dsl.Expressible;
+import io.oreto.toil.dsl.SQL;
 import io.oreto.toil.dsl.Table;
 import io.oreto.toil.dsl.query.Alias;
+import io.oreto.toil.provider.DbProvider;
 
 public class ColumnImpl<T> implements Column<T> {
 
@@ -45,8 +47,8 @@ public class ColumnImpl<T> implements Column<T> {
     }
 
     @Override
-    public String express() {
-        return String.format("%s.%s", table.getTableName(), name);
+    public SQL express(DbProvider dbProvider) {
+        return SQL.of(String.format("%s.%s", table.qualify(), name));
     }
 
     @Override

@@ -5,11 +5,12 @@ import io.oreto.toil.dsl.filter.Operator;
 import io.oreto.toil.dsl.filter.Param;
 import io.oreto.toil.dsl.query.Alias;
 import io.oreto.toil.dsl.query.Orderable;
+import io.oreto.toil.provider.DbProvider;
 
 // Where the expression can be a constant, function,
 // any combination of column names, constants, and functions connected by an operator or operators, or a sub-query.
 public interface Expressible<T> {
-    String express();
+    SQL express(DbProvider dbProvider);
 
     default Condition eq(T value) {
         return new Condition(this, Operator.EQ, Param.of(value));
@@ -48,18 +49,18 @@ public interface Expressible<T> {
     }
 
     default Orderable<T> asc() {
-        String s = express();
+        Expressible<T> tExpressible = this;
         return new Orderable<T>() {
             @Override public Direction getDirection() { return Direction.asc; }
-            @Override public String express() { return s; }
+            @Override public SQL express(DbProvider dbProvider) { return tExpressible.express(dbProvider); }
         };
     }
 
     default Orderable<T> desc() {
-        String s = express();
+        Expressible<T> tExpressible = this;
         return new Orderable<T>() {
             @Override public Direction getDirection() { return Direction.desc; }
-            @Override public String express() { return s; }
+            @Override public SQL express(DbProvider dbProvider) { return tExpressible.express(dbProvider); }
         };
     }
 

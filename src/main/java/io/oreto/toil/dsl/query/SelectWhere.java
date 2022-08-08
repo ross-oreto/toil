@@ -4,6 +4,7 @@ import io.oreto.toil.dsl.filter.Condition;
 import io.oreto.toil.dsl.filter.Where;
 import io.oreto.toil.provider.DbProvider;
 import io.oreto.toil.provider.Result;
+import io.oreto.toil.provider.RowResult;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -23,8 +24,8 @@ public class SelectWhere extends Where implements Fetchable {
 
 
     @Override
-    public Result<java.lang.Record> fetch() throws SQLException {
-        return getProvider().fetch(select);
+    public RowResult fetch() throws SQLException {
+        return (RowResult) getProvider().fetch(select);
     }
 
     @Override

@@ -1,6 +1,8 @@
 package io.oreto.toil.provider;
 
+import io.oreto.toil.dsl.SQL;
 import io.oreto.toil.dsl.column.ColumnInfo;
+import io.oreto.toil.dsl.sequence.Sequence;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -40,31 +42,38 @@ public class OracleProvider extends DbProvider {
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, name);
             stmt.setString(2, schema);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                String columnName = rs.getString("COLUMN_NAME");
-                String dataType = rs.getString("DATA_TYPE");
-                String nullable = rs.getString("NULLABLE");
-                int precision = rs.getInt("DATA_PRECISION");
-                int scale = rs.getInt("DATA_SCALE");
-                columns.put(columnName, new ColumnInfo() {
-                    @Override
-                    public String getName() {
-                        return columnName;
-                    }
+            try(ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String columnName = rs.getString("COLUMN_NAME");
+                    String dataType = rs.getString("DATA_TYPE");
+                    String nullable = rs.getString("NULLABLE");
+                    int precision = rs.getInt("DATA_PRECISION");
+                    int scale = rs.getInt("DATA_SCALE");
+                    columns.put(columnName, new ColumnInfo() {
+                        @Override
+                        public String getName() {
+                            return columnName;
+                        }
 
-                    @Override
-                    public Class<?> getType() {
-                        return Types.oracleType(dataType, precision, scale);
-                    }
+                        @Override
+                        public Class<?> getType() {
+                            return Types.oracleType(dataType, precision, scale);
+                        }
 
-                    @Override
-                    public boolean isNullable() {
-                        return "Y".equalsIgnoreCase(nullable);
-                    }
-                });
+                        @Override
+                        public boolean isNullable() {
+                            return "Y".equalsIgnoreCase(nullable);
+                        }
+                    });
+                }
             }
         }
         return columns;
+    }
+
+    @Override
+    public <T extends Number> SQL toSQL(Sequence<T> sequence, boolean current) {
+        String which = current ? "currval" : "nextval";
+        return SQL.of(String.format("select %s.%s from dual", which, sequence.qualify()));
     }
 }

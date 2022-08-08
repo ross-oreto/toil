@@ -1,15 +1,10 @@
 package io.oreto.toil.provider;
 
-import io.oreto.toil.dsl.column.ColumnInfo;
+import io.oreto.toil.dsl.SQL;
 import io.oreto.toil.dsl.query.Select;
+import io.oreto.toil.dsl.sequence.Sequence;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -40,16 +35,22 @@ public class SqlProvider extends DbProvider {
     }
 
     @Override
-    public String page(Select select) {
+    public SQL page(Select select) {
         Integer offset = select.getOffset();
         Integer limit = select.getLimit();
         String order = select.isOrdered() ? "" : "order by (select null) ";
 
         if (Objects.nonNull(limit)) {
-            return String.format("%soffset %d rows fetch next %d rows only", order, offset == null ? 0 : offset, limit);
+            return SQL.of(order + "offset ? rows fetch next ? rows only", offset == null ? 0 : offset, limit);
         } else if (Objects.nonNull(offset)) {
-            return String.format("%soffset %d rows", order, offset);
+            return SQL.of(order + "offset ? rows", offset);
         } else
-            return "";
+            return SQL.of("");
+    }
+
+    @Override
+    public <T extends Number> SQL toSQL(Sequence<T> sequence, boolean current) {
+        String which = current ? "CURR" : "NEXT";
+        return SQL.of(String.format("select %s  VALUE FOR %s", which, sequence.qualify()));
     }
 }

@@ -1,9 +1,12 @@
 package io.oreto.toil.dsl.query;
 
-import io.oreto.toil.dsl.*;
+import io.oreto.toil.dsl.Expressible;
+import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.dsl.Table;
 import io.oreto.toil.dsl.filter.Condition;
 import io.oreto.toil.provider.DbProvider;
 import io.oreto.toil.provider.Result;
+import io.oreto.toil.provider.RowResult;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,7 +29,7 @@ public class Select implements Fetchable {
         this.expressibles = new ArrayList<>(Arrays.asList(expressibles));
         this.from = new ArrayList<>();
         this.orderables = new ArrayList<>();
-        this.limit = 500;
+        this.limit = null;
     }
 
     public Select from(Table... tables) {
@@ -38,8 +41,8 @@ public class Select implements Fetchable {
     }
 
     @Override
-    public Result<java.lang.Record> fetch() throws SQLException {
-        return getProvider().fetch(this);
+    public RowResult fetch() throws SQLException {
+        return (RowResult) getProvider().fetch(this);
     }
 
     @Override
