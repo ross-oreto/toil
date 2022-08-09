@@ -1,12 +1,12 @@
 package io.oreto.toil.test.db;
 
-import io.oreto.toil.DB;
 import io.oreto.toil.dsl.Table;
 import io.oreto.toil.dsl.column.*;
 import io.oreto.toil.dsl.query.Mapper;
 
-import java.sql.SQLException;
-import java.util.Optional;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
 
 public class AddressTable implements Table {
     public static final AddressTable ADDRESS = new AddressTable();
@@ -15,23 +15,6 @@ public class AddressTable implements Table {
     public final VarChar LINE = new VarCharImpl("LINE", true, this);
 
     public final Mapper<Address> mapper = Mapper.of(Address.class, this);
-
-    public Address create(DB db, Address address) throws SQLException {
-        return db.insert(ADDRESS)
-                .value(ID, DbSequence.DB_SEQUENCE.nextval)
-                .value(LINE, address.getLine())
-                .returning(getColumns())
-                .fetch(mapper)
-                .getFirstRecord();
-    }
-
-    public final Optional<Address> get(DB db, long id) throws SQLException {
-        return db.select()
-                .from(ADDRESS)
-                .where(ID.eq(id))
-                .fetch(mapper)
-                .getOneRecord();
-    }
 
     @Override
     public String getTableName() {
@@ -52,9 +35,9 @@ public class AddressTable implements Table {
     }
 
     @Override
-    public Column<?>[] getPrimaryKey() {
-        return new Column[] {
+    public Collection<Column<? extends Serializable>> getPrimaryKey() {
+        return List.of(
                 ID
-        };
+        );
     }
 }

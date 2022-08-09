@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class SQL {
+    public Object[] EMPTY_PARAMS = new Object[]{};
     public static SQL of(String sql, Object... parameters) {
         return new SQL(sql, parameters);
     }
@@ -23,6 +24,10 @@ public class SQL {
 
     public Collection<Object> getParameters() {
         return parameters;
+    }
+
+    public Object[] getParameterArray() {
+        return parameters.size() == 0 ? EMPTY_PARAMS : parameters.toArray();
     }
 
     public boolean hasParameters() {

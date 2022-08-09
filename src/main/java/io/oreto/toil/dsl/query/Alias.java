@@ -19,7 +19,7 @@ public class Alias<T> implements Expressible<T> {
 
     public SQL create(DbProvider dbProvider) {
         SQL sql = expressible.express(dbProvider);
-        return SQL.of(String.format("%s AS %s", sql, getAliasName()), sql.getParameters());
+        return SQL.of(String.format("%s AS %s", sql, getAliasName()), sql.getParameterArray());
     }
 
     public String getAliasName() {

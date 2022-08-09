@@ -65,7 +65,7 @@ public class Insert {
     }
 
     public Insert returning(Column<?>... columns) {
-        this.returning = List.of(columns);
+        this.returning = List.of(columns.length == 0 ? table.getColumns() : columns);
         return this;
     }
 

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Objects;
 
 public interface Fetchable extends DataSource {
-//    Result<Row> fetch() throws SQLException;
     RowResult fetch() throws SQLException;
     <T> Result<T> fetch(Mappable<T> mappable) throws SQLException;
 

@@ -3,11 +3,13 @@ package io.oreto.toil.test;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.oreto.toil.DB;
 import io.oreto.toil.Toil;
+import io.oreto.toil.dsl.function.Func;
 import io.oreto.toil.dsl.query.Mapper;
 import io.oreto.toil.provider.HsqldbProvider;
 import io.oreto.toil.provider.Result;
 import io.oreto.toil.provider.RowResult;
 import io.oreto.toil.test.db.Address;
+import io.oreto.toil.test.db.AddressRepo;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
@@ -17,6 +19,7 @@ import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.Optional;
 
 import static io.oreto.toil.test.db.AddressTable.ADDRESS;
@@ -27,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(OrderAnnotation.class)
 public class ToilTests {
     private static DB db;
-
+    private static AddressRepo addressRepo;
     @BeforeAll
     static void setup() throws SQLException {
         db = DB.using(new HsqldbProvider(new Toil.Config()
@@ -44,6 +47,8 @@ public class ToilTests {
                 statement.execute(line);
             }
         }
+
+        addressRepo = new AddressRepo(db);
     }
 
     @AfterAll
@@ -63,22 +68,23 @@ public class ToilTests {
                 .value(ADDRESS.LINE, "The Shire")
                 .returning(ADDRESS.ID)
                 .fetch();
-        long id = rowResult.getFirstRecord().getLong(0);
+        long id = rowResult.singleValue();
         assertEquals(1L, id);
 
-        Address address = ADDRESS.create(db, new Address().withLine("Hogwarts"));
+        Address address = addressRepo.create(new Address().withLine("Hogwarts"));
         assertEquals(address.getId(), db.currval(DB_SEQUENCE));
 
         rowResult = db.insert(ADDRESS)
                 .values(DB_SEQUENCE.nextval, "Winterfell")
                 .returning(ADDRESS.ID)
                 .fetch();
-        assertEquals(3L, rowResult.getFirstRecord().getLong(0));
+        assertEquals(3L, (Long) rowResult.singleValue());
     }
 
     @Test @Order(10)
     void queryAddressTest() throws SQLException {
-        long count = db.currval(DB_SEQUENCE);
+        long count = addressRepo.count();
+        assertEquals(count, (Long) db.select(Func.count(ADDRESS.ID)).from(ADDRESS).fetch().singleValue());
 
         Result<Address> records =
                 db.select(ADDRESS.ID, ADDRESS.LINE)
@@ -93,7 +99,9 @@ public class ToilTests {
 
         assertEquals(count, json.size());
 
-        Optional<Address> record = ADDRESS.get(db, 1L);
+        Optional<Address> record = addressRepo.get(1L);
+        assertTrue(record.isPresent());
+        record = addressRepo.get(Map.of(ADDRESS.ID, 1L));
         assertTrue(record.isPresent());
     }
 }

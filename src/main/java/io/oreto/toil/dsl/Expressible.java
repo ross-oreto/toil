@@ -7,10 +7,16 @@ import io.oreto.toil.dsl.query.Alias;
 import io.oreto.toil.dsl.query.Orderable;
 import io.oreto.toil.provider.DbProvider;
 
+import java.io.Serializable;
+
 // Where the expression can be a constant, function,
 // any combination of column names, constants, and functions connected by an operator or operators, or a sub-query.
 public interface Expressible<T> {
     SQL express(DbProvider dbProvider);
+
+    default Condition eq(Serializable value) {
+        return new Condition(this, Operator.EQ, Param.of(value));
+    }
 
     default Condition eq(T value) {
         return new Condition(this, Operator.EQ, Param.of(value));

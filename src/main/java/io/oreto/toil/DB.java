@@ -45,6 +45,10 @@ public class DB implements DataSource, AutoCloseable {
         return getProvider().currval(sequence);
     }
 
+    public long count(Table table) throws SQLException {
+        return select().from(table).fetch().singleValue();
+    }
+
     @Override
     public void close() throws Exception {
         provider.close();

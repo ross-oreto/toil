@@ -217,7 +217,7 @@ public abstract class DbProvider implements AutoCloseable {
         } else {
             SQL sql = toSQL(insert.getSelectValues());
             sb.append(' ').append(sql.getSql());
-            return SQL.of(sb.toString(), sql.getParameters());
+            return SQL.of(sb.toString(), sql.getParameterArray());
         }
     }
 
@@ -373,11 +373,16 @@ public abstract class DbProvider implements AutoCloseable {
 
     public SQL lower(Expressible<CharSequence> string) {
         SQL sql = string.express(this);
-        return SQL.of(String.format("%s(%s)", Func.Names.LOWER.name(), sql.getSql()), sql.getParameters());
+        return SQL.of(String.format("%s(%s)", Func.Names.LOWER.name(), sql.getSql()), sql.getParameterArray());
     }
 
     public SQL upper(Expressible<CharSequence> string) {
         SQL sql = string.express(this);
-        return SQL.of(String.format("%s(%s)", Func.Names.UPPER.name(), sql.getSql()), sql.getParameters());
+        return SQL.of(String.format("%s(%s)", Func.Names.UPPER.name(), sql.getSql()), sql.getParameterArray());
+    }
+
+    public SQL count(Expressible<?> expressible) {
+        SQL sql = expressible == null ? SQL.of("*") : expressible.express(this);
+        return SQL.of(String.format("%s(%s)", Func.Names.COUNT.name(), sql.getSql()), sql.getParameterArray());
     }
 }
