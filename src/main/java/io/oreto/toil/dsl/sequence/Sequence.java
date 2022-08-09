@@ -1,7 +1,7 @@
 package io.oreto.toil.dsl.sequence;
 
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.dsl.expression.Expressible;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.provider.DbProvider;
 
 public interface Sequence<T extends Number> extends Expressible<T> {

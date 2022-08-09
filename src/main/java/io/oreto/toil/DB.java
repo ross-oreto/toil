@@ -2,12 +2,12 @@ package io.oreto.toil;
 
 
 import io.oreto.toil.dsl.DataSource;
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.Table;
 import io.oreto.toil.dsl.column.Column;
+import io.oreto.toil.dsl.expression.Expressible;
 import io.oreto.toil.dsl.insert.Insert;
 import io.oreto.toil.dsl.query.Select;
 import io.oreto.toil.dsl.sequence.Sequence;
+import io.oreto.toil.dsl.table.Table;
 import io.oreto.toil.provider.DbProvider;
 
 import java.sql.SQLException;

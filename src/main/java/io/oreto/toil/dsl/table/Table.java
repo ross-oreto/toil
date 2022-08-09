@@ -1,4 +1,4 @@
-package io.oreto.toil.dsl;
+package io.oreto.toil.dsl.table;
 
 import io.oreto.toil.dsl.column.Column;
 

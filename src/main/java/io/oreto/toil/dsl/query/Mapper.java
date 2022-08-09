@@ -1,6 +1,6 @@
 package io.oreto.toil.dsl.query;
 
-import io.oreto.toil.dsl.Table;
+import io.oreto.toil.dsl.table.Table;
 
 import java.util.HashMap;
 import java.util.Map;

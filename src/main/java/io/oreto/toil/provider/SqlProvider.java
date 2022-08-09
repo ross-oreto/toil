@@ -1,6 +1,6 @@
 package io.oreto.toil.provider;
 
-import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.dsl.query.Select;
 import io.oreto.toil.dsl.sequence.Sequence;
 

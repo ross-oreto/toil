@@ -1,7 +1,7 @@
 package io.oreto.toil.dsl.function;
 
 
-import io.oreto.toil.dsl.Expressible;
+import io.oreto.toil.dsl.expression.Expressible;
 import io.oreto.toil.dsl.query.Orderable;
 
 public abstract class Func<R> implements Orderable<R> {

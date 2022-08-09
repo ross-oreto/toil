@@ -1,7 +1,7 @@
 package io.oreto.toil.provider;
 
-import io.oreto.toil.dsl.SQL;
 import io.oreto.toil.dsl.column.ColumnInfo;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.dsl.sequence.Sequence;
 
 import java.io.IOException;

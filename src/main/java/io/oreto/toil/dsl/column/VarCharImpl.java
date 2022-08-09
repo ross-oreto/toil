@@ -1,11 +1,11 @@
 package io.oreto.toil.dsl.column;
 
 
-import io.oreto.toil.dsl.Table;
+import io.oreto.toil.dsl.expression.Param;
 import io.oreto.toil.dsl.filter.Condition;
 import io.oreto.toil.dsl.filter.Operator;
-import io.oreto.toil.dsl.filter.Param;
 import io.oreto.toil.dsl.function.Lower;
+import io.oreto.toil.dsl.table.Table;
 
 public class VarCharImpl extends ColumnImpl<CharSequence> implements VarChar {
     public VarCharImpl(String name, boolean nullable, Table table) {

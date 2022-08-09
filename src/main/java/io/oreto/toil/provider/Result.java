@@ -2,10 +2,10 @@ package io.oreto.toil.provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.oreto.toil.Toil;
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.Table;
+import io.oreto.toil.dsl.expression.Expressible;
 import io.oreto.toil.dsl.query.Mappable;
 import io.oreto.toil.dsl.query.Row;
+import io.oreto.toil.dsl.table.Table;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;

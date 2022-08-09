@@ -1,8 +1,8 @@
 package io.oreto.toil.dsl.function;
 
 
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.dsl.expression.Expressible;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.provider.DbProvider;
 
 public class Count extends Func<CharSequence> {

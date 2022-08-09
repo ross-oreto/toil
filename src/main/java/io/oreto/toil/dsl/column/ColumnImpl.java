@@ -1,10 +1,10 @@
 package io.oreto.toil.dsl.column;
 
 
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.SQL;
-import io.oreto.toil.dsl.Table;
+import io.oreto.toil.dsl.expression.Expressible;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.dsl.query.Alias;
+import io.oreto.toil.dsl.table.Table;
 import io.oreto.toil.provider.DbProvider;
 
 public class ColumnImpl<T> implements Column<T> {

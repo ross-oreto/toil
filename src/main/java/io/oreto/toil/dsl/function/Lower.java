@@ -1,9 +1,9 @@
 package io.oreto.toil.dsl.function;
 
 
-import io.oreto.toil.dsl.Constant;
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.dsl.expression.Constant;
+import io.oreto.toil.dsl.expression.Expressible;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.provider.DbProvider;
 
 public class Lower extends Func<CharSequence> {

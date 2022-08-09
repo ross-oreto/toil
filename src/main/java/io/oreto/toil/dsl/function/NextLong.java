@@ -1,6 +1,6 @@
 package io.oreto.toil.dsl.function;
 
-import io.oreto.toil.dsl.SQL;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.dsl.sequence.Sequence;
 import io.oreto.toil.provider.DbProvider;
 

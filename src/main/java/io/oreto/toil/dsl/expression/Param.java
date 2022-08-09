@@ -1,7 +1,5 @@
-package io.oreto.toil.dsl.filter;
+package io.oreto.toil.dsl.expression;
 
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.SQL;
 import io.oreto.toil.provider.DbProvider;
 
 public class Param<T> implements Expressible<T> {

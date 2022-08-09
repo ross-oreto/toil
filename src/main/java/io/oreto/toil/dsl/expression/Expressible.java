@@ -1,10 +1,10 @@
-package io.oreto.toil.dsl;
+package io.oreto.toil.dsl.expression;
 
 import io.oreto.toil.dsl.filter.Condition;
 import io.oreto.toil.dsl.filter.Operator;
-import io.oreto.toil.dsl.filter.Param;
 import io.oreto.toil.dsl.query.Alias;
 import io.oreto.toil.dsl.query.Orderable;
+import io.oreto.toil.dsl.table.Table;
 import io.oreto.toil.provider.DbProvider;
 
 import java.io.Serializable;

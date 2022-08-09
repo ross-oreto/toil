@@ -1,9 +1,8 @@
 package io.oreto.toil.provider;
 
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.SQL;
-import io.oreto.toil.dsl.Table;
 import io.oreto.toil.dsl.column.ColumnInfo;
+import io.oreto.toil.dsl.expression.Expressible;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.dsl.filter.Where;
 import io.oreto.toil.dsl.function.Func;
 import io.oreto.toil.dsl.insert.Insert;
@@ -12,6 +11,7 @@ import io.oreto.toil.dsl.query.Orderable;
 import io.oreto.toil.dsl.query.Row;
 import io.oreto.toil.dsl.query.Select;
 import io.oreto.toil.dsl.sequence.Sequence;
+import io.oreto.toil.dsl.table.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,6 +1,6 @@
 package io.oreto.toil.dsl.column;
 
-import io.oreto.toil.dsl.Table;
+import io.oreto.toil.dsl.table.Table;
 
 public class LongImpl extends ColumnImpl<Long> implements Num<Long> {
     public LongImpl(String name, boolean nullable, Table table) {

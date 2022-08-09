@@ -1,8 +1,8 @@
 package io.oreto.toil.test.db;
 
-import io.oreto.toil.dsl.Table;
 import io.oreto.toil.dsl.column.*;
 import io.oreto.toil.dsl.query.Mapper;
+import io.oreto.toil.dsl.table.Table;
 
 import java.io.Serializable;
 import java.util.Collection;

@@ -1,9 +1,9 @@
 package io.oreto.toil.dsl.query;
 
-import io.oreto.toil.dsl.Expressible;
-import io.oreto.toil.dsl.SQL;
-import io.oreto.toil.dsl.Table;
+import io.oreto.toil.dsl.expression.Expressible;
+import io.oreto.toil.dsl.expression.SQL;
 import io.oreto.toil.dsl.filter.Condition;
+import io.oreto.toil.dsl.table.Table;
 import io.oreto.toil.provider.DbProvider;
 import io.oreto.toil.provider.Result;
 import io.oreto.toil.provider.RowResult;

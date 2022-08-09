@@ -1,5 +1,6 @@
-package io.oreto.toil.dsl;
+package io.oreto.toil.dsl.expression;
 
+import io.oreto.toil.dsl.table.Table;
 import io.oreto.toil.provider.DbProvider;
 
 public class Constant<T> implements Expressible<T> {
